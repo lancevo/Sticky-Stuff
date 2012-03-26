@@ -122,7 +122,7 @@ Licensed under MIT
 						base.$window.bind('scroll', $.throttle(base.throttle, base.stickyPosition));						
 					}
                 
-                	// de-activate stickystuff
+					// de-activate stickystuff
 					base.notReallySticky = function() {
 						base.$window.unbind('scroll', base.stickyPosition);
 						// put it back the way it was
@@ -148,7 +148,7 @@ Licensed under MIT
 
 	            	return base;
 
-				} // function
+			} // function
 
 				
 
