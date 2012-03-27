@@ -47,7 +47,7 @@ generates:
   cloned table:
     id is generated randomly and prefix is stickystuff 
   -->
-  <table id="stickystuffXXX" classnames="one two three cloned"> 
+  <table id="stickystuffXXX" class="one two three cloned"> 
    ....
   </table>
   
