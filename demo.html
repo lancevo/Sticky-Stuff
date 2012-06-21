@@ -2,97 +2,82 @@
 <head>
 	<title>StickyStuff Demo</title>
 	
+	<style>
+		/* required: core css & reset table */
+		table {
+			margin: 0;
+			padding: 0;
+			border: 0;
+		}
+		.stickystuff-cloned {
+			margin-top:0;
+			position: fixed;
+			top:0;
+			z-index:999;
+		}
+
+		/* your css */
+		table {
+			width:400px;
+			margin:200px 0px 1000px 200px;
+		}
+		th, td {
+			width:100px;
+			height:50px;
+			border:1px solid #000;
+		}
+
+		#tbl thead {
+			background:#ddd;
+		}
+		.stickystuff-cloned {
+			background:cyan;
+		}
+
+	</style>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-	<script src="jquery.ba-throttle-debounce.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="stickystuff.js" type="text/javascript" charset="utf-8"></script>
 	
-	<style>
-		table, td, th {
-			margin:0;
-			padding:0;
-			border-spacing:0;
-			border-collapse:collapse;
-			border:1px solid #ccc;
-		}
-		
-		#wrapper{
-			width:960px;
-			margin:0 auto;
-		}
-		
-		table {
-			width:950px;
-		}
-		
-		th {
-			height:40px;
-		}
-	
-		
-		table thead {
-			background:#ececec;
-		}
-	
-		#top {
-			height:200px;
-		}
-		#bottom {
-			height: 1200px;
-		}
-		
-		/* make it tall enought for scrolling */
-		tbody td {
-			height:2000px;
-		}
-	
-		
-	</style>
-	
-	<script>
-	$(document).ready(function(){
-		$("table").stickystuff();
-	});
-		
-	</script>
 	
 </head>
 <body>
 	
-	<div id="wrapper">
-		<p id="top">
-			Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in nisl magna. Nullam non ultricies orci. Vivamus enim dolor, rutrum eu pellentesque sit amet, fermentum et est. Nunc vitae elit quam, quis interdum nunc. Etiam ac justo ac purus vulputate fermentum at vel lorem. Maecenas vel urna purus, eget molestie dui. Aliquam ornare leo vitae tellus pulvinar accumsan nec a dolor. Mauris lacinia vestibulum accumsan. Ut tempus mauris a nisl lobortis aliquam. Integer ornare ornare lectus ut semper. Curabitur blandit fringilla lorem mollis rutrum. Cras non nibh purus, sed ultricies erat.
-		</p>
-		
-		<table >
-			<thead>
-				<tr>
-					<th colspan="3">Fusce congue dignissim odio</th>
-					<th colspan="4">Nunc suscipit posuere leo vel condimentum</th>
-				</tr>
-				<tr>
-					<th> Col 1 </th>
-					<th> Col 2 </th>
-					<th> Ut est magna </th>
-					<th> Col 4 </th>
-					<th> Col 5 </th>
-					<th> Col 6 </th>
-					<th> Pellentesque </th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td> Cras </td>
-					<td> non </td>
-					<td> purus </td>
-					<td> ultricies </td>
-					<td> imperdiet </td>
-					<td> 2 </td>
-					<td> ornare </td>
-				</tr>
-			</tbody>
-		</table>
-		
-		<p id="bottom">Vivamus euismod mauris et justo euismod vitae iaculis magna tempus. Ut lacinia facilisis urna ut pharetra. Sed eu lorem neque, non tincidunt est. Pellentesque mattis diam in mi hendrerit eu euismod metus luctus. In luctus imperdiet pulvinar. Nam auctor, ligula ac convallis interdum, est velit aliquet quam, ullamcorper placerat neque diam ac eros. Sed pulvinar egestas feugiat. Cras felis velit, suscipit non volutpat in, lobortis sit amet ante.</p>
-	</div>
+	<table id="tbl">
+		<thead>
+			<tr>
+				<th class="col1"> Column 1 </th>
+				<th class="col2"> Column 2 </th>
+				<th class="col3"> Column 3 </th>
+				<th class="col4"> Column 4 </th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+
+
+	<script>
+		// generate dummy data
+		var html = '';
+
+		for (var i=100; i; i--) {
+
+			html += '<tr>' +
+					'<td>' +  (Math.random()*1000).toFixed(2) + '</td>' +
+					'<td>' +  (Math.random()*1000).toFixed(2) + '</td>' +
+					'<td>' +  (Math.random()*1000).toFixed(2) + '</td>' +
+					'<td>' +  (Math.random()*1000).toFixed(2) + '</td>' +
+					'</tr>';
+		}
+		$("#tbl tbody").html(html);
+
+
+		$(document).ready(function(){
+			$("#tbl").stickystuff({
+				throttle:10
+			});
+		});
+
+	</script>
 </body>
 </html>

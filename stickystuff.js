@@ -1,123 +1,185 @@
 /*!
 stickystuff
-A jQuery plug-in for floating table header
+A jQuery plug-in for persistent table header
 https://github.com/lvo811/Sticky-Stuff/
 
 Copyright (C) 2012 Lance Vo
 Licensed under MIT
 
 */
-/* Important Note:
-	If this is being used in tabs, you must:
-		1) Set width for ui-tabs-panels, for this plug-in to calculate width/height corrrectly
-		2) Set .ui-tabs-hide similar as below:
-			position:absolute;
-			top:0px;
-			left:-9999px;
-*/
+
 (function ($) {
+    // By Remy Sharp http://remysharp.com/2010/07/21/throttling-function-calls/
+    function throttle(fn, delay) {
+      var timer = null;
+      return function () {
+        var context = this, args = arguments;
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          fn.apply(context, args);
+        }, delay);
+      };
+    }
+
     $.fn.stickystuff = function (opts) {
         return this.each(function () {
-            var data = $.data(document.body, "stickystuff") || {};
-            if ($(this).attr('data-stickystuff')) {
-                var existingSticky = data[$(this).attr('data-stickyststuff')];
-                if (existingSticky) {
-                    return existingSticky;
+            
+            // get existing stickytableheader instance
+            var _instance = $.data(this, "stickystuff") || undefined;
+
+            if (!_instance) {
+                console.log('new');
+               _instance = new stickyheader(this);
+               $.data(this, "stickystuff", _instance);
+                //return this;
+            }
+
+            if (typeof opts === "string") {
+                switch(opts) {
+                    case 'enable' : _instance.enable(); break;
+                    case 'disable' : _instance.disable(); break;
+                    case 'destroy' : _instance.destroy(); break;
+                    default: throw 'stickystuff: invalid parameter';
                 }
             }
-            var defaultOpts = {
-                wrapper: '',
-                classnames: '',
-                throttle: 100 // in ms					
-            };
-            $.extend(defaultOpts, opts);
-            var sticky = new StickySituation(this, defaultOpts);
-            data[sticky.stickyId] = sticky;
-            $.data(document.body, "stickystuff", data);
+            
+            return  this;
 
-            function StickySituation(base, opts) {
-                base = $(base); // the original table
-                base.throttle = opts.throttle || 100;
-                base.$window = $(window);
-                base.stickyId = "stickystuff" + Math.floor(Math.random() * 1000);
-                base.attr('data-stickystuff', base.stickyId);
-                base.thead = base.find("thead");
-                base.theadHeight = base.find("thead").height();
-                if (isNaN(base.theadHeight)) {
-                    throw 'Unable to calculate thead height - <thead> is required';
-                    return;
+
+        });
+
+
+        function stickyheader(el) {
+
+            // default parameters
+            var o = {
+                    // add classnames to cloned header
+                    classnames : '',
+                    // add attributes cloned header
+                    attributes: '',
+                    // throttle browser scrolling execution
+                    throttle: 50 
+                },
+                self = this,
+                // original table
+                table = $(el),
+                cloneId = "stickystuff" + Math.floor(Math.random() * 1000),
+                // cloned table
+                clone,
+                isStarted = false,
+                $window = $(window)
+                ;
+
+            if (!table.find("thead").length) {
+                throw 'stickystuff: <thead> is required';
+                return;
+            }
+
+            if (typeof opts === "object") {
+                $.extend(o, opts);    
+            }            
+
+            clone = $('<table id="' + cloneId + '" class="stickystuff-cloned ' + o.classnames + '"' + o.attributes + ' ></table>')
+            
+            table.thead = table.find("thead");
+            clone.thead = table.thead.clone();
+            //  insert header into clone table
+            clone.prepend(clone.thead);
+
+            table.headerHeight = table.thead.height();
+            
+            calculateOffset();
+            measureHeader();
+
+            // fix issue with columns don't align
+            clone.width( table.outerWidth());
+
+            table.attr('data-stickystuff', cloneId);
+
+            // insert clone table into DOM before the original table
+            clone.hide().insertBefore(table);
+
+            enable();
+
+            // measure the column widths and apply it to the cloned header 
+            function measureHeader() {
+                var clonedThs = clone.thead.find("th");
+                table.thead.find("th").each(function(i){
+                    //set width to clone header columns
+                    $(clonedThs[i]).width($(this).width());
+                    $(clonedThs[i]).outerWidth($(this).outerWidth());
+
+                    console.log('c vs o : ' + $(clonedThs[i]).width() + ' ' +  $(this).width());
+                    console.log('outer c vs o : ' + $(clonedThs[i]).outerWidth() + ' ' +  $(this).outerWidth());
+                    $(clonedThs[i]).height($(this).height());
+                });
+                clone.width(table.width());
+            }
+
+            // calculate offset of table on the page
+            // to determine when to show the sticky header
+            function calculateOffset() {
+                table.startPos = table.offset().top + table.headerHeight;
+
+                // sometimes weird thing happen, unable to calculate the offset
+                if (isNaN(table.startPos)) {
+                    table.startPos = parseFloat(table.css("marginTop")) + table.headerHeight;
                 }
-                // calculate the table's offset.top
-                base.recalculateOffset = function () {
-                    base.startPoint = base.offset().top + base.theadHeight;
-                    if (isNaN(base.startPoint)) {
-                        base.startPoint = base.theadHeight + parseFloat(base.css('marginTop'));
+
+                table.stopPos = table.offset().top + table.height();
+            }
+
+
+            // clone table show/hide manager 
+            function toggle() {
+                var currentPos = $window.scrollTop() + table.headerHeight;
+                if (currentPos > table.startPos && currentPos < table.stopPos) {
+                    // desktop
+                    if (!isStarted) {
+                        isStarted = true;
+                        table.thead.css('visibility','hidden');
+                        clone.show();
                     }
-                    base.stopPoint = base.offset().top + base.height();
-                }
-                var classnames = base.attr('class') || '';
-                base.clonedTable = $('<table id="' + base.stickyId + '" ></table>');
-                base.clonedTableThead = base.thead.clone();
-                base.clonedTable.prepend(base.clonedTableThead);
-                base.clonedTable.addClass(classnames + opts.classnames + ' cloned').css('z-index', '99999').css('position', 'fixed').css('top', '0px').hide();
-                base.isclonedTableSticking = false;
-                base.addClass('stickystuff');
-                // set the width and height for THs and cloned THs
-                base.remeasureThead = function () {
-                    var clonedTableTHs = base.clonedTableThead.find("th");
-                    base.thead.find("th").each(function (i) {
-                        var w = $(this).width() + 'px',
-                            h = $(this).height() + 'px';
-                        $(this).css('width', w).css('height', h);
-                        $(clonedTableTHs[i]).width(w).height(h);
-                    });
-                }
-                // make sure the header is sticking to top
-                base.stickyPosition = function () {
-                    var position = base.$window.scrollTop() + base.theadHeight;
-                    base.recalculateOffset();
-                    if (position > base.startPoint && position < base.stopPoint) {
-                        if (!base.isclonedTableSticking) {
-                            base.isclonedTableSticking = true;
-                            // swap the thead to reserve attached events - such as sorting functionalities  
-                            base.clonedTable.prepend(base.thead);
-                            base.prepend(base.clonedTableThead);
-                            base.clonedTable.show();
-                        }
-                    } else {
-                        if (base.isclonedTableSticking) {
-                            base.isclonedTableSticking = false;
-                            // no longer sticky, put theads where they're belonged
-                            base.clonedTable.prepend(base.clonedTableThead);
-                            base.prepend(base.thead);
-                            base.clonedTable.hide();
-                        }
+                } else {
+                    if (isStarted) {
+                        isStarted = false;
+                        clone.hide();
+                        table.thead.css('visibility','');
                     }
                 }
-                // activate stickystuff
-                base.reallySticky = function () {
-                    base.$window.bind('scroll', $.throttle(base.throttle, base.stickyPosition));
-                }
-                // de-activate stickystuff
-                base.notReallySticky = function () {
-                    base.$window.unbind('scroll', base.stickyPosition);
-                    // put it back the way it was
-                    base.isclonedTableSticking = false;
-                    base.clonedTable.prepend(base.clonedTableThead);
-                    base.prepend(base.thead);
-                    base.clonedTable.hide();
-                }
-                base.recalculateOffset();
-                base.remeasureThead();
-                base.reallySticky();
-                // insert cloned table
-                base.clonedTable.insertBefore(base);
-                // add wrapper element
-                if (opts.wrapper) {
-                    $(base.clonedTable).wrap(opts.wrapper);
-                }
-                return base;
-            } // function
-        }); // return
-    }
-}(jQuery))
+            }
+
+            // enable and bind event listener to window scroll
+            function enable() {
+                // no need for throttle with modern browser like Chrome
+                $window.bind("scroll", throttle(toggle, o.throttle));
+                // re-trigger the toggle if it hasn't, ie: page is preloaded in the middle of the table, and it hasn't been activated
+                $window.scroll();
+            }
+
+
+            // disable sticky header
+            function disable(){
+                $window.unbind("scroll", toggle);
+                table.thead.css('visibility','');
+                isStarted = false;
+                clone.hide();
+            }
+
+            // stop and remove sticky header
+            function destroy() {
+                disable();
+                $.data(self, "stickystuff", undefined);
+                clone.remove();
+            }
+
+           
+            return {
+                enable: enable,
+                disable: disable,
+                destroy : destroy,
+            };
+        } // stickyheader
+
+    } // fn
+}(jQuery));
