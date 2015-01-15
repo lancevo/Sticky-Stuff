@@ -1,7 +1,7 @@
 /*!
 stickystuff
 A jQuery plug-in for persistent table header
-https://github.com/lvo811/Sticky-Stuff/
+https://github.com/lancevo/Sticky-Stuff/
 
 Copyright (C) 2012 Lance Vo
 Licensed under MIT
@@ -177,7 +177,7 @@ Licensed under MIT
             return {
                 enable: enable,
                 disable: disable,
-                destroy : destroy,
+                destroy : destroy
             };
         } // stickyheader
 
